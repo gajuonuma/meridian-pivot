@@ -1,0 +1,26 @@
+{
+  "name": "meridian-pivot",
+  "version": "1.0.0",
+  "description": "Solo Recon: Message Queue mini-prototype (The Meridian Pivot)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gajuonuma/meridian-pivot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/gajuonuma/meridian-pivot/issues"
+  },
+  "homepage": "https://github.com/gajuonuma/meridian-pivot#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "redis": "^6.2.1"
+  }
+}
