@@ -41,3 +41,13 @@ Success... Producer connected to Redis queue
  Event 9 sent: Mechanical Keyboard - restock 16 units
  Event 10 sent: USB-C Hub - restock 7 units
 Producer finished sending 10 events
+
+## Blocker Entry #[Next Number]
+
+**Timestamp:** 19/08/2028 18:58
+**Goal:** To understand why the browser didn't auto-update when new Redis events arrived.  
+**What I tried:** Checked the browser at http://localhost:3000/inventory and noticed I had to manually refresh to see new data.  
+**The Realization:** Realized that standard HTTP GET requests are a "Pull" model (Request-Response). The browser asks once, gets the data, and closes the connection. It has no way of knowing the server's cache updated unless it asks again.  
+**The Fix/Action:** 
+1. Acknowledged that a "query endpoint" (as per assignment spec) is designed to be pulled, so manual refresh is technically correct.
+2. To demonstrate deeper understanding, implemented Client-Side Polling by adding a `public/index.html` file with a JavaScript `setInterval` that fetches the `/inventory` endpoint every 2 seconds, creating a "live dashboard" effect.
