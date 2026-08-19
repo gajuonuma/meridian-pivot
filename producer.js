@@ -66,4 +66,5 @@ const interval = setInterval(async () => {
 
 }
 
+
 startProducer();
