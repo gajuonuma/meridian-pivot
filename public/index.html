@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Inventory Live Sync</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #00ff00; padding: 20px; }
+        h2 { color: #ffffff; }
+        pre { background: #2d2d2d; padding: 15px; border-radius: 5px; }
+        .status { color: #ffff00; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h2>📦 Northstar Retail: Live Inventory Cache</h2>
+    <p class="status">Auto-refreshing every 2 seconds...</p>
+    <pre id="inventory-data">Loading...</pre>
+
+    <script>
+        // This function fetches the data and updates the screen
+        async function fetchInventory() {
+            try {
+                const response = await fetch('/inventory');
+                const data = await response.json();
+                // Format the JSON nicely for the screen
+                document.getElementById('inventory-data').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('inventory-data').textContent = 'Error fetching inventory: ' + error;
+            }
+        }
+
+        // Fetch immediately on load
+        fetchInventory();
+
+        // Then fetch automatically every 2000 milliseconds (2 seconds)
+        setInterval(fetchInventory, 2000);
+    </script>
+</body>
+</html>
