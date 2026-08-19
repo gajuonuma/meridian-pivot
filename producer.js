@@ -56,13 +56,13 @@ const interval = setInterval(async () => {
     console.log(` Event ${eventCount} sent: ${product.name} - ${action} ${quantity} units`);
 
     //after 10 events, it stops (so we don't run the test forever)
-    If (eventCount) >= 10 {
+    if (eventCount >= 10) {
         clearInterval(interval);
-        console.log("Producer finished sending 10 eents");
+        console.log("Producer finished sending 10 events");
         await client.quit();
         process.exit(0);
     }
-}, 5000); // 5000 milliseconds = 5 seconds
+}, 3000); // 3000 milliseconds = 3 seconds
 
 }
 

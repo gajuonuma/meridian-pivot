@@ -17,3 +17,27 @@ The Error: File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running
 - Learned that the Node.js .gitignore template automatically excludes `.env` files for security reasons (they contain secrets).
 - Confirmed the file exists using `ls -a` and `cat .env`.
 
+## Blocker Entry #3
+
+**Timestamp:** [Today's Date & Time]  
+**Goal:** Run producer.js to send events to Redis queue  
+**What I tried:** Ran `node producer.js` after writing the Producer code  
+**The Error:** SyntaxError: Unexpected token '{'
+at line 59: If (eventCount) >= 10 {
+**What I Googled/Read:** Searched "SyntaxError Unexpected token '{' JavaScript if statement"  
+**The Fix/Realization:** I corrected the syntactical error by making if lower case and then changing the code from If (eventCount) >= 10 {} to if(eventCount >= 10) {}; which is the right way to write the code.
+- The code ran successfully:
+- $ node producer.js 
+◇ injected env (1) from .env // tip: ⌘ override existing { override: true }
+Success... Producer connected to Redis queue
+ Event 1 sent: Mechanical Keyboard - return 11 units
+ Event 2 sent: USB-C Hub - return 2 units
+ Event 3 sent: USB-C Hub - sale 3 units
+ Event 4 sent: Wireless Mouse - sale 9 units
+ Event 5 sent: Wireless Mouse - restock 9 units
+ Event 6 sent: Wireless Mouse - restock 16 units
+ Event 7 sent: Wireless Mouse - return 20 units
+ Event 8 sent: Mechanical Keyboard - sale 7 units
+ Event 9 sent: Mechanical Keyboard - restock 16 units
+ Event 10 sent: USB-C Hub - restock 7 units
+Producer finished sending 10 events
