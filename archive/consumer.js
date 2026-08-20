@@ -1,3 +1,7 @@
+// ⚠️ DEPRECATED: Pre-pivot Assignment 1 prototype (Northstar Retail Inventory). 
+// Obsolete as of Day 4 pivot to Solstice Events async check-in model. 
+// Do not run. See SCOPE_DELTA.md for details.
+
 // consumer.js - The App (Listens to Redis queue and updates inventory cache)
 
 require('dotenv').config();
