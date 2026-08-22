@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 3000;
 
 // 1. STATE MANAGEMENT
 const attendeeState = new Map();
+// CRITICAL: Map printJobId back to attendeeId to handle out-of-order webhooks
+const jobToAttendee = new Map();
 
 // 2. REDIS CONNECTION
 const redisUrl = process.env.REDIS_URL;
@@ -25,7 +27,8 @@ async function connectRedis() {
 
 // 3. ENDPOINTS
 app.post('/checkin', async (req, res) => {
-  const { attendeeId } = req.body;
+  // Safely extract attendeeId, defaulting to undefined if req.body is empty
+  const attendeeId = req.body && req.body.attendeeId;
 
   if (!attendeeId) {
     return res.status(400).json({ error: 'attendeeId is required' });
@@ -33,6 +36,7 @@ app.post('/checkin', async (req, res) => {
 
   const currentState = attendeeState.get(attendeeId);
 
+  // DUPLICATE PROTECTION
   if (currentState) {
     if (currentState.status === 'PENDING') {
       return res.status(409).json({ message: 'Already processing', status: 'PENDING', attendeeId, printJobId: currentState.printJobId });
@@ -42,6 +46,7 @@ app.post('/checkin', async (req, res) => {
     }
   }
 
+  // NEW ATTENDEE
   const printJobId = `JOB-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
   
   attendeeState.set(attendeeId, {
@@ -49,6 +54,9 @@ app.post('/checkin', async (req, res) => {
     printJobId: printJobId,
     timestamp: new Date().toISOString()
   });
+  
+  // Link the job ID to the attendee ID for the webhook
+  jobToAttendee.set(printJobId, attendeeId);
 
   const queueMessage = JSON.stringify({ printJobId, attendeeId });
   await redisClient.lPush('print_queue', queueMessage);
@@ -76,6 +84,43 @@ app.get('/status/:attendeeId', (req, res) => {
     printJobId: state.printJobId,
     lastUpdated: state.timestamp
   });
+});
+
+// NEW: WEBHOOK ENDPOINT
+app.post('/webhook/print-complete', (req, res) => {
+  const { printJobId, status } = req.body;
+
+  if (!printJobId || !status) {
+    return res.status(400).json({ error: 'printJobId and status are required' });
+  }
+
+  // Resolve out-of-order: Find which attendee this job belongs to
+  const attendeeId = jobToAttendee.get(printJobId);
+
+  if (!attendeeId) {
+    console.log(`⚠️ Webhook received for unknown printJobId: ${printJobId}`);
+    return res.status(404).json({ error: 'Unknown print job' });
+  }
+
+  const currentState = attendeeState.get(attendeeId);
+
+  // Prevent duplicate webhook processing
+  if (currentState.status === 'CHECKED_IN') {
+    console.log(`⚠️ Duplicate webhook ignored for ${attendeeId} (Job: ${printJobId})`);
+    return res.status(200).json({ message: 'Already processed' });
+  }
+
+  if (status === 'completed') {
+    currentState.status = 'CHECKED_IN';
+    currentState.timestamp = new Date().toISOString();
+    attendeeState.set(attendeeId, currentState);
+    console.log(`✅ Webhook processed: ${attendeeId} is now CHECKED_IN`);
+  } else {
+    console.log(`❌ Print failed for ${attendeeId} (Job: ${printJobId}). Status remains PENDING.`);
+  }
+
+  // Always acknowledge the webhook to the vendor immediately
+  res.status(200).json({ message: 'Webhook received' });
 });
 
 // 4. START SERVER
