@@ -2,22 +2,17 @@
 require('dotenv').config();
 const express = require('express');
 const { createClient } = require('redis');
-const crypto = require('crypto'); // Built-in Node module to generate unique Job IDs
+const crypto = require('crypto');
 
 const app = express();
-app.use(express.json()); // Allows us to parse JSON bodies in POST requests
+app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// ==========================================
-// 1. STATE MANAGEMENT (In-Memory for Prototype)
-// ==========================================
-// Maps attendeeId -> { status: 'PENDING' | 'CHECKED_IN', printJobId: string }
+// 1. STATE MANAGEMENT
 const attendeeState = new Map();
 
-// ==========================================
-// 2. REDIS CONNECTION (Reusing Assignment 1 Knowledge)
-// ==========================================
+// 2. REDIS CONNECTION
 const redisUrl = process.env.REDIS_URL;
 const redisClient = createClient({ url: redisUrl });
 
@@ -28,11 +23,7 @@ async function connectRedis() {
   console.log('✅ Connected to Redis Message Queue');
 }
 
-// ==========================================
 // 3. ENDPOINTS
-// ==========================================
-
-// POST /checkin - Staff scans an attendee QR code
 app.post('/checkin', async (req, res) => {
   const { attendeeId } = req.body;
 
@@ -40,28 +31,17 @@ app.post('/checkin', async (req, res) => {
     return res.status(400).json({ error: 'attendeeId is required' });
   }
 
-  // DUPLICATE PROTECTION: Check current state
   const currentState = attendeeState.get(attendeeId);
 
   if (currentState) {
     if (currentState.status === 'PENDING') {
-      return res.status(409).json({ 
-        message: 'Already processing', 
-        status: 'PENDING', 
-        attendeeId,
-        printJobId: currentState.printJobId 
-      });
+      return res.status(409).json({ message: 'Already processing', status: 'PENDING', attendeeId, printJobId: currentState.printJobId });
     }
     if (currentState.status === 'CHECKED_IN') {
-      return res.status(409).json({ 
-        message: 'Already checked in', 
-        status: 'CHECKED_IN', 
-        attendeeId 
-      });
+      return res.status(409).json({ message: 'Already checked in', status: 'CHECKED_IN', attendeeId });
     }
   }
 
-  // NEW ATTENDEE: Generate unique print job ID and mark as PENDING
   const printJobId = `JOB-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
   
   attendeeState.set(attendeeId, {
@@ -70,8 +50,9 @@ app.post('/checkin', async (req, res) => {
     timestamp: new Date().toISOString()
   });
 
-  // TODO (Milestone 4): Publish to Redis Queue here
-  console.log(`📤 Publishing print request for ${attendeeId} (Job: ${printJobId}) to queue...`);
+  const queueMessage = JSON.stringify({ printJobId, attendeeId });
+  await redisClient.lPush('print_queue', queueMessage);
+  console.log(`📤 Published to queue: ${queueMessage}`);
 
   res.status(202).json({
     message: 'Check-in initiated. Badge printing in progress.',
@@ -81,7 +62,6 @@ app.post('/checkin', async (req, res) => {
   });
 });
 
-// GET /status/:attendeeId - UI polls this to see if printing is done
 app.get('/status/:attendeeId', (req, res) => {
   const { attendeeId } = req.params;
   const state = attendeeState.get(attendeeId);
@@ -98,17 +78,11 @@ app.get('/status/:attendeeId', (req, res) => {
   });
 });
 
-// TODO (Milestone 6): POST /webhook/print-complete will go here
-
-// ==========================================
 // 4. START SERVER
-// ==========================================
 async function startServer() {
   await connectRedis();
-  
   app.listen(PORT, () => {
     console.log(`🚀 Solstice Check-in Server running at http://localhost:${PORT}`);
-    console.log(`📋 Test endpoint: POST http://localhost:${PORT}/checkin`);
   });
 }
 

@@ -42,7 +42,7 @@ Success... Producer connected to Redis queue
  Event 10 sent: USB-C Hub - restock 7 units
 Producer finished sending 10 events
 
-## Blocker Entry #[Next Number]
+## Blocker Entry #4
 
 **Timestamp:** 19/08/2028 18:58
 **Goal:** To understand why the browser didn't auto-update when new Redis events arrived.  
@@ -51,3 +51,24 @@ Producer finished sending 10 events
 **The Fix/Action:** 
 1. Acknowledged that a "query endpoint" (as per assignment spec) is designed to be pulled, so manual refresh is technically correct.
 2. To demonstrate deeper understanding, implemented Client-Side Polling by adding a `public/index.html` file with a JavaScript `setInterval` that fetches the `/inventory` endpoint every 2 seconds, creating a "live dashboard" effect.
+
+## Blocker Entry #5
+
+**Timestamp:** 16:54 22/08/2026
+**Goal:** Build the core check-in server incrementally  
+**What I did:** 
+- Built `server.js` first WITHOUT Redis to prove the state machine and duplicate protection worked in isolation
+- Tested with curl: confirmed POST /checkin returns 202 for new attendees, 409 for duplicates
+- Tested GET /status/:attendeeId to verify state retrieval
+- Once that worked, layered on Redis publishing to connect to the message queue
+**The Realization:** Should have committed the first working version as a separate milestone to create a clearer audit trail. Going forward, will commit after every working milestone.
+**The Fix:** Documented the progression here. Committed the Redis-connected version as the next logical milestone.
+
+## Blocker Entry #6
+
+**Timestamp:** 17:18 22/08/2026 
+**Goal:** Test the /checkin endpoint using curl after starting the server.  
+**What I tried:** Ran `node server.js` and then immediately tried to run the `curl` command in the same terminal window.  
+**The Error:** `curl: (7) Failed to connect to localhost:3000 after 2246 ms: Could not connect to server`  
+**What I Googled/Read:** Searched "curl failed to connect to localhost nodejs same terminal".  
+**The Fix/Realization:** Realized that running `node server.js` blocks the terminal because it is actively listening for HTTP requests. I cannot run other commands in that same window. I opened a second, separate Git Bash terminal window to run the `curl` commands while leaving the server running in the first window. The test then succeeded immediately.
