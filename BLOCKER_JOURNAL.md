@@ -72,3 +72,16 @@ Producer finished sending 10 events
 **The Error:** `curl: (7) Failed to connect to localhost:3000 after 2246 ms: Could not connect to server`  
 **What I Googled/Read:** Searched "curl failed to connect to localhost nodejs same terminal".  
 **The Fix/Realization:** Realized that running `node server.js` blocks the terminal because it is actively listening for HTTP requests. I cannot run other commands in that same window. I opened a second, separate Git Bash terminal window to run the `curl` commands while leaving the server running in the first window. The test then succeeded immediately.
+
+## Blocker Entry #7
+
+**Timestamp:** 18:02 22/08/2026 
+**Goal:** Test end-to-end flow with 3 attendees and duplicate protection.  
+**What I tried:** Ran three rapid curl commands to simulate QR scans.  
+**The Error:** `TypeError: Cannot destructure property 'attendeeId' of 'req.body' as it is undefined.`  
+**What I Googled/Read:** Searched "Express req.body undefined destructuring error".  
+**The Fix/Realization:** 
+1. Realized my third curl command was missing the `-d '{"attendeeId": "..."}'` payload, sending an empty body.
+2. Learned that destructuring `const { attendeeId } = req.body` throws an error if `req.body` is undefined.
+3. Fixed by changing to safe extraction: `const attendeeId = req.body && req.body.attendeeId;` which gracefully returns a 400 Bad Request instead of crashing the server.
+4. Also observed that the printer simulator correctly processed a stale job from a previous run, and the server safely rejected it as "Unknown print job", proving the system is resilient to orphaned webhooks.
